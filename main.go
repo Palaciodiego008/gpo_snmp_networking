@@ -62,13 +62,13 @@ func main() {
 
 }
 
-func getSNMPTable(params *gosnmp.GoSNMP, baseOid []string) ([][]gosnmp.SnmpPDU, error) {
-	oids := make([]string, len(baseOid))
-	result, err := walkSNMP(params, oids)
+func getSNMPTable(params *gosnmp.GoSNMP, baseOid []string) (map[int][]gosnmp.SnmpPDU, error) {
+	result, err := walkSNMP(params, baseOid)
 	if err != nil {
 		return nil, err
 	}
-	var rows [][]gosnmp.SnmpPDU
+
+	rows := make(map[int][]gosnmp.SnmpPDU)
 	for oid, value := range result {
 		oidParts := strings.Split(oid, ".")
 		lastIndex := oidParts[len(oidParts)-1]
@@ -76,11 +76,15 @@ func getSNMPTable(params *gosnmp.GoSNMP, baseOid []string) ([][]gosnmp.SnmpPDU, 
 		if err != nil {
 			return nil, err
 		}
-		if rowIndex > len(rows) {
-			rows = append(rows, make([]gosnmp.SnmpPDU, 0))
+
+		row, ok := rows[rowIndex]
+		if !ok {
+			row = make([]gosnmp.SnmpPDU, 0)
 		}
-		rows[rowIndex-1] = append(rows[rowIndex-1], gosnmp.SnmpPDU{Value: value})
+
+		rows[rowIndex] = append(row, gosnmp.SnmpPDU{Value: value})
 	}
+
 	return rows, nil
 }
 
