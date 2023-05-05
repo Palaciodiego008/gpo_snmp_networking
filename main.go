@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -89,11 +90,18 @@ func getSNMPTable(params *gosnmp.GoSNMP, baseOid []string) (map[int][]gosnmp.Snm
 }
 
 func walkSNMP(params *gosnmp.GoSNMP, oids []string) (map[string]string, error) {
-	result := make(map[string]string)
+	if params == nil {
+		return nil, fmt.Errorf("params cannot be nil")
+	}
+
+	var result map[string]string
+	if len(oids) == 0 {
+		return result, nil
+	}
 
 	err := params.Connect()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to connect to SNMP: %v", err)
 	}
 	defer params.Conn.Close()
 
@@ -103,7 +111,7 @@ func walkSNMP(params *gosnmp.GoSNMP, oids []string) (map[string]string, error) {
 			return nil
 		})
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to walk OID %q: %v", oid, err)
 		}
 	}
 
